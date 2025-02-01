@@ -8,26 +8,20 @@ import os
 app = Flask(__name__)
 
 def validate_script(script):
-    """Validate that the script contains a main() function and returns JSON."""
+    # Validate that the script contains a main() function and returns JSON.
     if "def main():" not in script:
         return False, "Script must contain a main() function"
     return True, None
 
 def execute_script_safely(script: str):
-    if not script:
-        return jsonify({"error": "No script provided"}), 400
-
-    if "def main()" not in script:
-        return {"error": "Script must contain a 'def main()' function"}, 400
-    
-    # with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as temp_file:
-    #     temp_file.write(script.encode())
-    #     temp_file_path = temp_file.name
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         wrapped_script = f"""
 import sys
 import json
+import pandas as pn
+import numpy as np
+import os
 
 {script}
 
@@ -44,29 +38,36 @@ if __name__ == "__main__":
 """
         f.write(wrapped_script)
         script_path = f.name
+
+        print(f"created temp file {f.name}")
     try:
         cmd = [
             "nsjail",
-            "--mode", "o",
-            "--chroot", "/",
-            "--quiet",
+            "--config", "/app/nsjail.cfg",
             "--",
             "/usr/bin/python3", script_path
         ]
-
+        
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
 
-        os.unlink(script_path)
+        print(result)
+
+        print("deleted temp file")
 
         stderr_output = result.stderr.strip()
         stdout_parts = result.stdout.split("---RESULT_SEPARATOR---")
 
+        print(stderr_output)
+        print(stdout_parts)
+
+        print("parsing file")
         if result.returncode != 0:
             return None, {"error": stderr_output or "Execution failed"}, 400
         
         print(stdout_parts)
 
         if len(stdout_parts) != 2:
+            print("HERE")
             return None, {"error": "Script did not return valid JSON"}, 400
         
         stdout = stdout_parts[0]
@@ -104,7 +105,7 @@ def execute():
     # Execute script
     result, stdout, error = execute_script_safely(script)
     if error:
-        return jsonify({"error": error}), 400
+        return jsonify({"stdout": stdout, "error": error}), 400
 
     return jsonify({
         "result": result,

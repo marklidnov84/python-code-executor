@@ -1,8 +1,9 @@
-FROM python:3.9-slim
+FROM ubuntu:22.04
 
-# Install nsjail and dependencies
+# Install required packages
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    python3 \
+    python3-pip \
     autoconf \
     bison \
     flex \
@@ -14,29 +15,28 @@ RUN apt-get update && apt-get install -y \
     libtool \
     make \
     pkg-config \
-    protobuf-compiler \
-    python3
-    
-# Set up working directory
-WORKDIR /app
-
-RUN git clone https://github.com/google/nsjail.git && cd nsjail && make && mv nsjail /usr/local/bin && cd ..
+    protobuf-compiler
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
+
+# Clone and build nsjail
+RUN git clone https://github.com/google/nsjail.git /nsjail && \
+    cd /nsjail && \
+    make && \
+    mv /nsjail/nsjail /bin && \
+    rm -rf /nsjail
+
+# Create app directory
+WORKDIR /app
 
 # Copy application code
-COPY app.py .
-COPY test.py .
+COPY . .
 
-# Create necessary directories and set permissions
-RUN mkdir -p /tmp/scripts && \
-    chmod 777 /tmp/scripts && \
-    chmod 755 /usr/local/bin/python3
+# Run as non-root user
+RUN useradd -m myuser
+USER myuser
 
-# Expose port
-EXPOSE 8080
-
-# Run the application
-CMD ["python", "app.py"]
+# Start the application
+CMD ["python3", "app.py"]
