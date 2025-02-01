@@ -39,7 +39,6 @@ if __name__ == "__main__":
         f.write(wrapped_script)
         script_path = f.name
 
-        print(f"created temp file {f.name}")
     try:
         cmd = [
             "nsjail",
@@ -57,7 +56,6 @@ if __name__ == "__main__":
             return None, {"error": stderr_output or "Execution failed"}, 400
 
         if len(stdout_parts) != 2:
-            print("HERE")
             return None, {"error": "Script did not return valid JSON"}, 400
         
         try:
@@ -87,7 +85,6 @@ def execute():
     # Validate script
     is_valid, error = validate_script(script)
     if not is_valid:
-        print("here")
         return jsonify({"error": error}), 400
 
     # Execute script
