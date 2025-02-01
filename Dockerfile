@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
     libtool \
     make \
     pkg-config \
-    protobuf-compiler 
+    protobuf-compiler \
+    python3
     
 # Set up working directory
 WORKDIR /app
@@ -27,6 +28,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app.py .
+COPY test.py .
 
 # Create necessary directories and set permissions
 RUN mkdir -p /tmp/scripts && \

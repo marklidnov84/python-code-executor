@@ -98,6 +98,7 @@ def execute():
     # Validate script
     is_valid, error = validate_script(script)
     if not is_valid:
+        print("here")
         return jsonify({"error": error}), 400
 
     # Execute script
