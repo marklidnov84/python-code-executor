@@ -19,3 +19,13 @@ curl --location 'http://34.168.137.155:8080/execute' \
 --data '{
     "script": "def main():\n first_name = \"mark\" \n last_name = \"lidnov\" \n return {\"name\": first_name, \"last\": last_name}"
 }'
+
+Response:
+```json
+{
+    "result": {
+        "last": "lidnov",
+        "name": "mark"
+    },
+    "stdout": ""
+}
