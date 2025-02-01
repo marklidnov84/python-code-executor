@@ -50,31 +50,19 @@ if __name__ == "__main__":
         
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
 
-        print(result)
-
-        print("deleted temp file")
-
         stderr_output = result.stderr.strip()
         stdout_parts = result.stdout.split("---RESULT_SEPARATOR---")
 
-        print(stderr_output)
-        print(stdout_parts)
-
-        print("parsing file")
         if result.returncode != 0:
             return None, {"error": stderr_output or "Execution failed"}, 400
-        
-        print(stdout_parts)
 
         if len(stdout_parts) != 2:
             print("HERE")
             return None, {"error": "Script did not return valid JSON"}, 400
         
-        stdout = stdout_parts[0]
-        
         try:
             result = json.loads(stdout_parts[1].strip())
-            return result, stdout, None
+            return result, stdout_parts[0], None
         except:
             return {"error": "Script did not return valid JSON"}, 200
         
@@ -83,7 +71,7 @@ if __name__ == "__main__":
     
 @app.route('/execute', methods=["POST"])
 def execute():
-    """Handle POST requests to execute Python scripts."""
+    # Handle POST requests to execute Python scripts
 
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
