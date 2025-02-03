@@ -17,23 +17,18 @@ The service ensures the security of script execution by using nsjail in a Docker
 To send a request to the API, use the following cURL command:
 
 ```curl
-curl --location 'http://34.168.137.155:8080/execute' \
+curl --location 'https://python-code-executor-239153248383.us-west1.run.app/execute' \
 --header 'Content-Type: application/json' \
 --data '{
     "script": "def main():\n first_name = \"mark\" \n last_name = \"lidnov\" \n return {\"name\": first_name, \"last\": last_name}"
 }'
 ```
+AND
 
-Response:
-
-```json
-{
-    "result": {
-        "last": "lidnov",
-        "name": "mark"
-    },
-    "stdout": ""
-}
+```curl
+curl --location 'https://python-code-executor-239153248383.us-west1.run.app/execute' \
+--header 'Content-Type: application/json' \
+--data '{"script": "class MyCustomClass:\n    def __init__(self, name, value):\n        self.name = name\n        self.value = value\n\ndef main():\n    return MyCustomClass(\"example\", 42)"}'
 ```
 
 ### Deploy With Docker
