@@ -14,12 +14,12 @@ def validate_script(script):
     return True, None
 
 def execute_script_safely(script: str):
-
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        # wrap the script to ensure it returns JSON
         wrapped_script = f"""
 import sys
 import json
-import pandas as pn
+import pandas as pd
 import numpy as np
 import os
 
@@ -33,13 +33,14 @@ if __name__ == "__main__":
         print("---RESULT_SEPARATOR---")
         print(json_result)
     except Exception as e:
-        print(f"Error during execution: str(e)", file=sys.stderr)
+        print(f"Error during execution: {{str(e)}}", file=sys.stderr)
         sys.exit(1)
 """
         f.write(wrapped_script)
         script_path = f.name
 
     try:
+        # run the script inside NSJail
         cmd = [
             "nsjail",
             "--config", "/app/nsjail.cfg",
@@ -53,23 +54,26 @@ if __name__ == "__main__":
         stdout_parts = result.stdout.split("---RESULT_SEPARATOR---")
 
         if result.returncode != 0:
-            return None, {"error": stderr_output or "Execution failed"}, 400
+            return None, stderr_output or "Execution failed", 400
 
         if len(stdout_parts) != 2:
-            return None, {"error": "Script did not return valid JSON"}, 400
+            return None, "Script did not return valid JSON", 400
         
         try:
+            # attempt to deserialize the JSON result
             result = json.loads(stdout_parts[1].strip())
-            return result, stdout_parts[0], None
-        except:
-            return {"error": "Script did not return valid JSON"}, 200
-        
+            return result, stdout_parts[0].strip(), None
+        except TypeError:
+            return None, "Script did not return valid JSON", 400
+    
     except subprocess.TimeoutExpired:
-        return None, "", "Script execution timed out"
+        return None, "Script execution timed out", 400
+    finally:
+        os.unlink(script_path)
     
 @app.route('/execute', methods=["POST"])
 def execute():
-    # Handle POST requests to execute Python scripts
+    # handle POST requests to execute Python scripts
 
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
@@ -82,12 +86,12 @@ def execute():
     if not isinstance(script, str):
         return jsonify({"error": "Script must be a string"}), 400
 
-    # Validate script
+    # validate script
     is_valid, error = validate_script(script)
     if not is_valid:
         return jsonify({"error": error}), 400
 
-    # Execute script
+    # execute script
     result, stdout, error = execute_script_safely(script)
     if error:
         return jsonify({"stdout": stdout, "error": error}), 400
