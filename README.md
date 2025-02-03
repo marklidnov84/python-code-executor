@@ -57,29 +57,8 @@ curl --location 'http://localhost:8080/execute' \
 
 ### Deploying on Google Cloud
 
-1. Push the docker image to GCR
+1. Deploy to Google Cloud Run container service
 
 ```
-docker tag python-remote-executor gcr.io/YOUR_PROJECT_ID/python-remote-executor && docker push gcr.io/YOUR_PROJECT_ID/python-remote-executor
+gcloud run deploy --allow-unauthenticated --allow-unencrypted-build --breakglass="running nsjail" --execution-environment=gen2 --source .
 ```
-
-2. Deploy Docker image on Google Cloud
-
-```
-gcloud compute instances create-with-container nsjail-vm \
-    --container-image=gcr.io/YOUR_PROJECT_ID/python-remote-executor \
-    --container-privileged \
-    --tags=python-executor \
-    --container-env=FLASK_ENV=production \
-    --scopes=cloud-platform
-```
-
-3. Expose the VM to the internet:
-
-```
-gcloud compute firewall-rules create python-allow-http \
-    --allow=tcp:8080 \
-    --target-tags=python-executor
-```
-
-4. The service will now be accessible at the external IP of your VM.
